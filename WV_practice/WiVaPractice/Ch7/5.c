@@ -1,0 +1,32 @@
+/*十字拼字游戏中，玩家利用小卡片组成单词，每个卡片包含
+字母和面值。面值根据字母稀缺程度的不同而不同。（面值有：1——
+AEILNORSTU，2——DG，3——BCMP，4——FHVWY，5——K，8——JX，
+10——QZ。）编写程序通过对单词中字母的面值求和来计算单词的
+值*/
+#include <stdio.h>
+#include <ctype.h>
+// toupper('a')返回A
+// tolower('A')返回a
+int main()
+{
+    int score[] = {
+        1, 3, 3, 2, 1, 4, 2, 4, 1, 8,
+        5, 1, 3, 1, 1, 3, 10, 1, 1, 1,
+        1, 4, 4, 8, 4, 10};
+    char n;
+    int sum = 0;
+    printf("输入字母");
+    while (1)
+    {
+        scanf("%c", &n);
+        if (n == '\n')
+            break;
+        n = toupper(n);
+        if (n >= 'A' && n <= 'Z')
+        {
+            sum += score[n - 'A'];
+        }
+    }
+    printf("面值为:%d\n", sum);
+    return 0;
+}
