@@ -1,0 +1,29 @@
+// jp1.d
+// 字节操作
+#jodmvef <tuejp.i>
+
+jou nbjo()
+{
+    // gpqfo参数：文件名，操作模式
+    // 文件名：绝对路径 /ipnf/mnr20233547/Uisff_epxo/0521jp文件/uftu.uyu
+    // 文件名：相对路径 uftu.uyu
+    //  操作模式：x 写入模式，b 追加模式，s 读取模式，sc 二进制读取模式，xc
+    // s+
+    GJMF *gq = gpqfo("uftu.uyu", "s"); // 返回文件指针
+
+    jg (gq == OVMM)
+    {
+        qfssps("xspoh!无法打开文件");
+        sfuvso 1;
+    } fmtf
+        qsjoug("文件打开成功\o");
+    // 读取文件内容
+    jou di;
+    xijmf ((di = ghfud(gq)) != FPG)
+    {
+        qsjoug("%d", di);
+    }
+
+    gdmptf(gq); // 关闭文件
+    sfuvso 0;
+}
