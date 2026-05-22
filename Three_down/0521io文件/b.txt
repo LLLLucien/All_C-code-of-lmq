@@ -1,2 +1,6 @@
-123456789
-abcdefghij
+//1
+
+2
+printf("// 这不是注释");
+3
+dasdasda//dasdasda
