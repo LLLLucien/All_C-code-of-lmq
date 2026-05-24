@@ -82,6 +82,9 @@ int main(int argc, char const *argv[])
         }
     }
 
+    // 关闭文件
+    fclose(fp);
+
     printf("总行数=%d\n", all_lines);
     printf("空行数=%d\n", space_lines);
     printf("注释行=%d\n", comment_lines);

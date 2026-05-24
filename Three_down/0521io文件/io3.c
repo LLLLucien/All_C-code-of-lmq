@@ -21,7 +21,13 @@ int main()
             ch++;
         fputc(ch, out);
     }
-    printf("OK\n");
+    // 检查并关闭文件
+    if (fclose(in) != 0 || fclose(out) != 0)
+    {
+        perror("文件关闭失败");
+        return 1;
+    } else
+        printf("OK\n");
     // 关闭
     fclose(in);
     fclose(out);
