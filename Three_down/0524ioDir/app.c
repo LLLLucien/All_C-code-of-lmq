@@ -90,7 +90,7 @@ int main(int argc, char *argv[])
     // 则是AAA_1_4.txt、AAA_2_4.txt、AAA_3_4.txt、AAA_4_4.txt
     for (int i = 0; i < cut; i++)
     {
-        sprintf(cut_arr[i], "%s_%d_%d.%s", filename, i, cut, dot);
+        sprintf(cut_arr[i], "%s_%d_%d.%s", filename, i + 1, cut, dot);
     }
     for (int i = 0; i < cut; i++)
     {
