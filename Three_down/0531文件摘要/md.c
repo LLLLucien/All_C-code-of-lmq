@@ -17,17 +17,19 @@ void print_hash(unsigned char *hash, int len)
     printf("\n");
 }
 
+// 使用统一的接口，计算任意长度的摘要值
 void evp_to_md5(char *str)
 {
     unsigned char hash[EVP_MAX_MD_SIZE];
-    EVP_MD_CTX *ctx = EVP_MD_CTX_new();
-    EVP_DigestInit_ex(ctx, EVP_md5(), NULL);
-    EVP_DigestUpdate(ctx, str, strlen(str));
+    EVP_MD_CTX *ctx = EVP_MD_CTX_new(); // 创建上下文
+    EVP_DigestInit_ex(ctx, EVP_md5(), NULL); // 初始化上下文，指定摘要算法为MD5
+    EVP_DigestUpdate(ctx, str,
+                     strlen(str)); // 更新上下文，把数据和数据长度传进来
 
     // 得到实际哈希值的长度，因为hash是可以改的
     unsigned int len;
-    EVP_DigestFinal_ex(ctx, hash, &len);
-    EVP_MD_CTX_free(ctx);
+    EVP_DigestFinal_ex(ctx, hash, &len); // 得到哈希值的长度
+    EVP_MD_CTX_free(ctx);                // 释放上下文
     printf("MD5: ");
     print_hash(hash, len);
 }
