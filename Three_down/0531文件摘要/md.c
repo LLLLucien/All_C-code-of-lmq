@@ -1,0 +1,115 @@
+// md.c
+// 摘要算法
+// 编译的时候需要链接第三方库，使用-lcrypto参数
+// gcc md.c -o md -lcrypto
+#include <openssl/evp.h>
+#include <openssl/md5.h>
+#include <openssl/sha.h>
+#include <stdio.h>
+#include <string.h>
+
+void print_hash(unsigned char *hash, int len)
+{
+    for (int i = 0; i < len; i++)
+    {
+        printf("%02x", hash[i]);
+    }
+    printf("\n");
+}
+
+void evp_to_md5(char *str)
+{
+    unsigned char hash[EVP_MAX_MD_SIZE];
+    EVP_MD_CTX *ctx = EVP_MD_CTX_new();
+    EVP_DigestInit_ex(ctx, EVP_md5(), NULL);
+    EVP_DigestUpdate(ctx, str, strlen(str));
+
+    // 得到实际哈希值的长度，因为hash是可以改的
+    unsigned int len;
+    EVP_DigestFinal_ex(ctx, hash, &len);
+    EVP_MD_CTX_free(ctx);
+    printf("MD5: ");
+    print_hash(hash, len);
+}
+
+// // 转换为MD5摘要
+// // MD5摘要是16字节，所以可以快速比较两个文件是否相同
+// void to_md5(char *str)
+// {
+//     // 哈希值，MD5摘要为16字节长度
+//     unsigned char hash[MD5_DIGEST_LENGTH];
+//     // 上下文 context-环境
+//     MD5_CTX ctx;
+//     // 初始化上下文
+//     MD5_Init(&ctx);
+//     // 更新上下文，把数据和数据长度传进来
+//     // 可以多次调用，每次调用都更新上下文，最后调用Final()函数得到哈希值
+//     MD5_Update(&ctx, str, strlen(str));
+//     // 得到哈希值
+//     MD5_Final(hash, &ctx);
+
+//     // 转换为16进制字符串输出->32位字符串
+//     printf("MD5: \t");
+
+//     print_hash(hash, MD5_DIGEST_LENGTH);
+//     // c90661b7f289ab661ce8b3b44cec8c97
+// }
+
+// void to_sha256(char *str)
+// {
+//     unsigned char hash[SHA256_DIGEST_LENGTH];
+//     // 上下文 context-环境
+//     // 初始化上下文
+//     // 更新上下文，把数据和数据长度传进来
+//     // 可以多次调用，每次调用都更新上下文，最后调用Final()函数得到哈希值
+//     // 得到哈希值
+//     // 转换为16进制字符串输出->64位字符串
+//     SHA256_CTX ctx;
+//     SHA256_Init(&ctx);
+//     SHA256_Update(&ctx, str, strlen(str));
+//     SHA256_Final(hash, &ctx);
+
+//     printf("SHA256: ");
+
+//     print_hash(hash, SHA256_DIGEST_LENGTH);
+//     // a
+//     // 3f1e08b8bfa617fd45a272d3fa0fce2e0e891dcf6643759817ef358dbde702c
+// }
+
+// void file_sha1(char *filename)
+// {
+//     FILE *fp = fopen(filename, "rb");
+//     if (fp == NULL)
+//     {
+//         printf("open file %s failed\n", filename);
+//         return;
+//     }
+
+//     unsigned char hash[SHA_DIGEST_LENGTH];
+//     SHA_CTX ctx;
+//     SHA1_Init(&ctx);
+
+//     // 需要看文件系统块大小
+//     unsigned char buf[100];
+//     int len;
+//     while ((len = fread(buf, 1, sizeof(buf), fp)) > 0)
+//     {
+//         SHA1_Update(&ctx, buf, len);
+//     }
+//     SHA1_Final(hash, &ctx);
+
+//     printf("SHA1: \t");
+//     print_hash(hash, SHA_DIGEST_LENGTH);
+//     fclose(fp);
+// }
+int main()
+{
+    char *str = "a";
+    // to_md5(str);
+    // to_sha256(str);
+    // file_sha1("a.txt");
+
+    evp_to_md5(str);
+    printf("\n");
+    return 0;
+}
