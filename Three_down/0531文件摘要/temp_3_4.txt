@@ -1,0 +1,23 @@
+个字符数组的内存
+    for (int i = 0; i < cut; i++)
+    {
+        cut_arr[i] = malloc(sizeof(char) * 128);
+    }
+    // 检查内存分配是否成功
+    for (int i = 0; i < cut; i++)
+    {
+        if (!cut_arr[i])
+        {
+            perror("内存分配失败\n");
+            for (int j = 0; j < i; j++)
+            {
+                free(cut_arr[j]);
+            }
+            free(cut_arr);
+            return EXIT_FAILURE;
+        }
+    }
+
+    // 提取文件名
+    char filename[128];
+    char 

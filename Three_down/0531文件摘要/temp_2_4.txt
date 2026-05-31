@@ -1,0 +1,23 @@
+    return EXIT_FAILURE;
+    }
+    // 读取文件
+    fseek(fp1, 0, SEEK_END);
+    long size = ftell(fp1);
+    // 重置文件指针
+    fseek(fp1, 0, SEEK_SET);
+    // 要切分的份数
+    int cut = 0;
+    if (size % 512 != 0)
+    {
+        cut = (size / 512) + 1;
+    } else
+        cut = size / 512;
+    // 切分文件
+    // 创建数组
+    char **cut_arr = malloc(cut * sizeof(char *));
+    if (!cut_arr)
+    {
+        perror("内存分配失败\n");
+        return EXIT_FAILURE;
+    }
+    // 分配每

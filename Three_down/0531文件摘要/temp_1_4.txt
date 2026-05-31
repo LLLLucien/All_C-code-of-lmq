@@ -1,0 +1,21 @@
+// cut.c
+// 切分文件
+// 生成一个摘要信息meta.txt
+// meta.txt存储每一片的哈希值，一行一个，最后一行是整体的哈希值
+#include <openssl/evp.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+void evp_to_md5(char *str);
+int main(int argc, char *argv[])
+{
+    if (argc != 2)
+    {
+        printf("请输入要切分的文件名\n");
+        return EXIT_FAILURE;
+    }
+    FILE *fp1 = fopen(argv[1], "rb");
+    if (!fp1)
+    {
+        perror("文件无法打开\n");
+    
