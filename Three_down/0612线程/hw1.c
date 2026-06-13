@@ -7,7 +7,7 @@
 #include <unistd.h>
 #define MAX 15
 #define START 2
-#define END 100000000
+#define END 100000
 
 int id = 1;
 typedef struct Par
