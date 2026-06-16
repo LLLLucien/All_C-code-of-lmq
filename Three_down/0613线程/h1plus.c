@@ -1,24 +1,6 @@
-// 使用多线程统计文件总行数
+// 使用多线程统计文件总行数，消除了忙等待
 // 发现需要加上锁
-/*
-pthread_mutex_t mylock;
-int main()
-{
-    pthread_mutex_init(&mylock, NULL);  // 第二个参数是属性，NULL表示默认
-    // ...
-}
 
-
-// 加锁
-pthread_mutex_lock(&mylock);
-total_lines += lines;
-// 解锁
-pthread_mutex_unlock(&mylock);
-
-//确保没有线程使用锁再销毁
-
-pthread_mutex_destroy(&mylock);
-*/
 // 32-  8.32
 // 16-  7.13
 // 10-  6.9
@@ -49,8 +31,8 @@ sync && echo 3 | sudo tee /proc/sys/vm/drop_caches
 #include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
-#define TASK_SIZE 102400
-#define TID_MAX 64
+#define TASK_SIZE 1024
+#define TID_MAX 10
 typedef struct AllCount
 {
     int file_count; // 文件数
@@ -61,9 +43,11 @@ typedef struct AllCount
 // 任务循环队列
 typedef struct queue
 {
-    char *data[TASK_SIZE]; // 数量
-    int rear, front;       // 队尾、队首
-
+    char *data[TASK_SIZE];    // 数量
+    int rear, front;          // 队尾、队首
+    pthread_mutex_t lock;     // 保护队列的锁
+    pthread_cond_t not_empty; // 队列非空条件变量（消费者等这个）
+    pthread_cond_t not_full;  // 队列非满条件变量（生产者等这个）
 } Queue;
 
 // 传给统计行数的函数的参数
@@ -75,7 +59,7 @@ typedef struct
     int done; // 队列为空而且查完所有文件和目录的标注位
 } TaskArgs;
 
-pthread_mutex_t mylock; // 全局锁
+pthread_mutex_t countLock; // 保护 line_count 的锁
 void init(TaskArgs *ta);
 
 // 循环队列的函数声明
@@ -92,7 +76,7 @@ void countLines(char *path, AllCount *ac); // 统计文件总行数
 
 int main(int argc, char *argv[])
 {
-    pthread_mutex_init(&mylock, NULL);
+    pthread_mutex_init(&countLock, NULL);
     TaskArgs *ta = malloc(sizeof(TaskArgs));
     AllCount *ac = malloc(sizeof(AllCount));
     Queue *q = malloc(sizeof(Queue));
@@ -118,10 +102,15 @@ int main(int argc, char *argv[])
     printf("目录数：%d\n", ta->ac->dir_count);
     printf("所有文件的总行数：%d\n", ta->ac->line_count);
 
+    // 销毁队列的锁和条件变量
+    pthread_mutex_destroy(&q->lock);
+    pthread_cond_destroy(&q->not_empty);
+    pthread_cond_destroy(&q->not_full);
+
     free(ta);
     free(ac);
     free(q);
-    pthread_mutex_destroy(&mylock);
+    pthread_mutex_destroy(&countLock);
     return 0;
 }
 
@@ -190,6 +179,13 @@ void *Thread_SCAN_ALL_FILE(void *arg)
     // 到这里说明扫描完了
     if (ta->done == 0)
         ta->done = 1;
+
+    // 扫描完成后，放入 TID_MAX-1 个结束标记（毒丸），通知所有消费线程退出
+    for (int i = 1; i < TID_MAX; i++)
+    {
+        enqueue(ta->q, "__END__");
+    }
+
     return NULL;
 }
 
@@ -203,35 +199,60 @@ void init(TaskArgs *ta)
     ta->path = "/home/lmq20233547/linux-7.0.10";
     // 初始化任务队列
     ta->q->rear = ta->q->front = 0;
+    // 初始化队列的锁和条件变量
+    pthread_mutex_init(&ta->q->lock, NULL);
+    pthread_cond_init(&ta->q->not_empty, NULL);
+    pthread_cond_init(&ta->q->not_full, NULL);
 }
 
+/*
+ * enqueue：生产者放入任务
+ * 用条件变量消除忙等待：
+ *   - 如果队列满了，调用 pthread_cond_wait(&q->not_full, &q->lock)
+ *     线程会原子地：解锁 → 休眠 → 被唤醒后自动加锁
+ *   - 放入数据后，调用 pthread_cond_signal(&q->not_empty)
+ *     唤醒一个等待取数据的消费者
+ */
 bool enqueue(Queue *q, char *val)
 {
-    // 如果满了，就一直等，直到有空位
-    // 前提是线程一定会一直取任务
-    while (1)
-    {
-        pthread_mutex_lock(&mylock);
-        if (!full(q))
-        {
-            q->rear = (q->rear + 1) % TASK_SIZE;
-            q->data[q->rear] = strdup(val); // strdup = malloc + strcpy，复制一份
-            pthread_mutex_unlock(&mylock);
-            return true;
-        }
-        pthread_mutex_unlock(&mylock);
-    }
+    pthread_mutex_lock(&q->lock);
+
+    // 队列满就休眠等待，直到有消费者取走数据后唤醒
+    while (full(q))
+        pthread_cond_wait(&q->not_full, &q->lock);
+
+    q->rear = (q->rear + 1) % TASK_SIZE;
+    q->data[q->rear] = strdup(val); // strdup = malloc + strcpy，复制一份
+
+    // 放入数据后，通知等待的消费者"队列非空了"
+    pthread_cond_signal(&q->not_empty);
+    pthread_mutex_unlock(&q->lock);
+    return true;
 }
 
+/*
+ * dequeue：消费者取出任务
+ * 用条件变量消除忙等待：
+ *   - 如果队列空了，调用 pthread_cond_wait(&q->not_empty, &q->lock)
+ *     线程会原子地：解锁 → 休眠 → 被唤醒后自动加锁
+ *   - 取出数据后，调用 pthread_cond_signal(&q->not_full)
+ *     唤醒一个等待放数据的生产者
+ */
 char *dequeue(Queue *q)
 {
-    if (!empty(q))
-    {
-        q->front = (q->front + 1) % TASK_SIZE;
+    pthread_mutex_lock(&q->lock);
 
-        return q->data[q->front];
-    }
-    return NULL;
+    // 队列空就休眠等待，直到有生产者放入数据后唤醒
+    while (empty(q))
+        pthread_cond_wait(&q->not_empty, &q->lock);
+
+    q->front = (q->front + 1) % TASK_SIZE;
+    char *val = q->data[q->front];
+
+    // 取出数据后，通知等待的生产者"队列非满了"
+    pthread_cond_signal(&q->not_full);
+    pthread_mutex_unlock(&q->lock);
+    return val;
 }
 
 bool full(Queue *q)
@@ -260,31 +281,30 @@ void countLines(char *path, AllCount *ac)
     {
         line_count++;
     }
-    pthread_mutex_lock(&mylock);
+    pthread_mutex_lock(&countLock);
     ac->line_count += line_count;
-    pthread_mutex_unlock(&mylock);
+    pthread_mutex_unlock(&countLock);
     fclose(fp);
 }
 
-// 多线程统计行数
+/*
+ * 多线程统计行数（条件变量版）
+ * dequeue 内部使用 pthread_cond_wait，队列空时线程休眠，不空转 CPU
+ * 收到 "__END__" 毒丸后退出
+ */
 void *Thread_countLines(void *arg)
 {
     TaskArgs *ta = (TaskArgs *)arg;
     // 读取循环队列的队首
     while (1)
     {
-        pthread_mutex_lock(&mylock);
-        if (empty(ta->q) && ta->done == 1)
-        {
-            pthread_mutex_unlock(&mylock);
-            break;
-        }
-        char *tmp_path = dequeue(ta->q);
-        pthread_mutex_unlock(&mylock);
+        char *tmp_path = dequeue(ta->q); // 内部会 wait，不会忙等
 
-        if (tmp_path == NULL)
+        // 收到结束标记（毒丸），退出
+        if (strcmp(tmp_path, "__END__") == 0)
         {
-            continue; // 队列暂时为空，继续循环等待
+            free(tmp_path);
+            break;
         }
 
         countLines(tmp_path, ta->ac);
