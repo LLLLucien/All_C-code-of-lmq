@@ -87,6 +87,7 @@ int main(int argc, char *argv[])
 
     pthread_t tid[TID_MAX];
     // 第一个默认是进行判断文件类型的线程
+    // 所以至少需要两个线程才能成功运行此程序
     pthread_create(&tid[0], NULL, Thread_SCAN_ALL_FILE, (void *)ta);
 
     for (int i = 1; i < TID_MAX; i++)
@@ -160,7 +161,7 @@ void getAllCount(const char *dir_path, AllCount *ac, Queue *q)
 }
 void *Thread_SCAN_ALL_FILE(void *arg)
 {
-    // 以后传入的参数可能不会硬性规定哪个，可能是任意目录，但不可能是文件
+    // 以后传入的参数可能不会硬性规定哪个，可能是任意目录，但不可能是文件，所以无需判断类型
     TaskArgs *ta = (TaskArgs *)arg;
 
     DIR *dir = opendir(ta->path);
@@ -180,7 +181,7 @@ void *Thread_SCAN_ALL_FILE(void *arg)
     if (ta->done == 0)
         ta->done = 1;
 
-    // 扫描完成后，放入 TID_MAX-1 个结束标记（毒丸），通知所有消费线程退出
+    // 扫描完成后，放入 TID_MAX-1 个结束标记，通知所有消费线程退出
     for (int i = 1; i < TID_MAX; i++)
     {
         enqueue(ta->q, "__END__");
