@@ -10,7 +10,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#define MAX_TID 1
+#define MAX_TID 4
 // 客户端多线程函数
 void *Client_io(void *arg);
 
