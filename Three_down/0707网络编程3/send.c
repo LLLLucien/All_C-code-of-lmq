@@ -16,9 +16,9 @@ int main()
     memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
     // inet_pton 把ip地址转换为网络字节序
-    inet_pton(AF_INET, "127.0.0.1", &addr.sin_addr); // 接收方ip
-    // inet_pton(AF_INET, "192.168.30.133", &addr.sin_addr); // 接收方ip
-    addr.sin_port = htons(9527); // 接收方port
+    // inet_pton(AF_INET, "127.0.0.1", &addr.sin_addr); // 接收方ip
+    inet_pton(AF_INET, "122.51.242.187", &addr.sin_addr); // 接收方ip
+    addr.sin_port = htons(9527);                          // 接收方port
 
     while (1)
     {
