@@ -1,0 +1,16 @@
+---
+# 基于 LLVM 风格
+BasedOnStyle: LLVM
+
+# 缩进宽度
+IndentWidth: 4
+
+# 让 namespace 内部的内容缩进
+NamespaceIndentation: All
+
+# 大括号另起一行（和你现在的风格一致）
+BreakBeforeBraces: Allman
+
+# 允许短函数/if 写在一行（设为 false 更整洁）
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: Never
