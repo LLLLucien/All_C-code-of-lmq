@@ -10,13 +10,18 @@ class Vehicle
     virtual void run() = 0;
     virtual void energy_type() = 0;
     virtual void show() = 0;
-    // 多态基类必须有虚析构函数：
-    // 否则通过 Vehicle* delete 派生类对象时，只会调用 ~Vehicle()，
-    // 派生类析构函数被跳过，导致资源泄漏
+
     virtual ~Vehicle()
     {
         cout << "Vehicle析构函数" << endl;
     };
+};
+
+class Gas
+{
+  public:
+    virtual void energy_type() = 0;
+    virtual ~Gas() = default;
 };
 
 class Car : public Vehicle
@@ -35,7 +40,23 @@ class Car : public Vehicle
         cout << "Car析构函数" << endl;
     };
 };
+class HybridCar : public Car, public Gas
+{
 
+  public:
+    void energy_type() override
+    {
+        cout << "能源: 燃油+电力" << endl;
+    }
+    void show() override
+    {
+        cout << "这是混合动力车" << endl;
+    }
+    ~HybridCar()
+    {
+        cout << "HybridCar析构函数" << endl;
+    }
+};
 class ElectricCar : public Car
 {
   public:
@@ -100,22 +121,7 @@ class FuelMotorcycle : public Motorcycle
         cout << "FuelMotorcycle析构函数" << endl;
     }
 };
-class HybridCar : public Car
-{
-  public:
-    void energy_type() override
-    {
-        cout << "能源: 燃油+电力" << endl;
-    }
-    void show() override
-    {
-        cout << "这是混合动力车" << endl;
-    }
-    ~HybridCar()
-    {
-        cout << "HybridCar析构函数" << endl;
-    }
-};
+
 class FuelCar : public Car
 {
   public:
@@ -142,7 +148,7 @@ int main()
     for (int i = 0; i < 5; i++)
     {
         cout << "--------------------" << endl;
-        v[i]->show(); // 运行时按实际类型分发
+        v[i]->show();
         v[i]->run();
         v[i]->energy_type();
         cout << "--------------------" << endl;
