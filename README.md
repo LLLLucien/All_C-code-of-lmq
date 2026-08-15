@@ -1,4 +1,4 @@
-# All_C-code-of-lmq
+# All_Code_Of_Lmq
 
 > 个人 C 语言实践代码仓库 | 持续更新中
 
